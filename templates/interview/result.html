@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% block title %}Interview Result{% endblock %}
+
+{% block content %}
+
+<style>
+    body {
+        background: url("/static/images/background2.jpg") no-repeat center/cover;
+        color: white;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    /* 🌟 HEADINGS GLOW */
+    h2,
+    h3 {
+        color: white;
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    }
+
+    /* 🌟 ALL TEXT WHITE */
+    p,
+    span,
+    b {
+        color: white;
+    }
+
+    /* MAIN CONTAINER (NO GLASS) */
+    .result-container {
+        max-width: 950px;
+        margin: 50px auto;
+        padding: 30px;
+    }
+
+    /* 🎯 SCORE */
+    .score-box {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .score-box h1 {
+        font-size: 60px;
+        text-shadow: 0 0 15px cyan;
+    }
+
+    .badge {
+        padding: 8px 15px;
+        border-radius: 10px;
+        font-size: 18px;
+        background: linear-gradient(45deg, gold, orange);
+        color: black;
+    }
+
+    /* ✅ GLASS EFFECT ONLY HERE */
+    .card {
+        background: rgba(255, 255, 255, 0.06);
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+        transition: 0.3s;
+    }
+
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0 25px rgba(0, 255, 255, 0.5);
+    }
+
+    /* 📊 PROGRESS */
+    .progress {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        height: 10px;
+        margin-top: 5px;
+    }
+
+    .progress-bar {
+        height: 10px;
+        border-radius: 10px;
+    }
+
+    /* 🔘 BUTTONS */
+    .btn-group a {
+        padding: 10px 15px;
+        margin: 5px;
+        border-radius: 10px;
+        text-decoration: none;
+        color: white;
+        transition: 0.3s;
+    }
+
+    .btn-primary {
+        background: linear-gradient(45deg, #00c6ff, #0a376e);
+    }
+
+    .btn-success {
+        background: linear-gradient(45deg, #00ff88, #03682d);
+    }
+
+    .btn-secondary {
+        background: linear-gradient(45deg, #302c2c, #d49292);
+    }
+
+    .btn-group a:hover {
+        transform: scale(1.08);
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+    }
+
+    .card {
+        color: white !important;
+    }
+
+    .card p,
+    .card div {
+        color: white !important;
+    }
+
+    /* 📱 MOBILE RESPONSIVE RESULT PAGE */
+    @media screen and (max-width: 768px) {
+
+        .result-container {
+            margin: 20px 10px;
+            padding: 15px;
+        }
+
+        /* 🎯 SCORE SECTION */
+        .score-box h1 {
+            font-size: 40px;
+        }
+
+        .score-box h2 {
+            font-size: 18px;
+        }
+
+        .badge {
+            font-size: 14px;
+            padding: 6px 12px;
+        }
+
+        /* 📦 CARDS */
+        .card {
+            padding: 12px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        /* 📊 HEADINGS */
+        h3 {
+            font-size: 16px;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        /* 📊 PROGRESS BAR */
+        .progress {
+            height: 8px;
+        }
+
+        .progress-bar {
+            height: 8px;
+        }
+
+        /* 📝 QUESTION TEXT */
+        .card p {
+            font-size: 13px;
+            word-break: break-word;
+        }
+
+        /* 🔘 BUTTONS STACK */
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-group a {
+            width: 100%;
+            text-align: center;
+            font-size: 14px;
+            padding: 12px;
+        }
+
+        /* 🌍 spacing fix */
+        hr {
+            margin: 15px 0;
+        }
+    }
+</style>
+
+<div class="result-container">
+
+    <!-- 🎯 FINAL SCORE -->
+    <div class="score-box">
+        <h2>🎯 Final Result</h2>
+        <h1>{{ overall|default:0 }}%</h1>
+        <span class="badge">Grade: {{ final_grade }}</span>
+    </div>
+
+    <hr>
+
+    <!-- 📊 ROUND WISE -->
+    <h3>📊 Round-wise Performance</h3>
+
+    {% with b=basic_score|default:0 h=hr_score|default:0 t=tech_score|default:0 %}
+
+    <div class="card">
+        🟢 Basic: {{ b }}%
+        <div class="progress">
+            <div class="progress-bar" style="width: {{ b }}%; background: #00ff88;"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        👤 HR: {{ h }}%
+        <div class="progress">
+            <div class="progress-bar" style="width: {{ h }}%; background: #ffc107;"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        💻 Technical: {{ t }}%
+        <div class="progress">
+            <div class="progress-bar" style="width: {{ t }}%; background: #ff5252;"></div>
+        </div>
+    </div>
+
+    {% endwith %}
+
+    <hr>
+
+    <!-- 📊 BREAKDOWN -->
+    <h3>📊 Performance Breakdown</h3>
+
+    {% with c=confidence|default:0 cm=communication|default:0 a=accuracy|default:0 %}
+
+    <div class="card">
+        💡 Confidence: {{ c }}%
+        <div class="progress">
+            <div class="progress-bar" style="width: {{ c }}%; background: cyan;"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        🗣 Communication: {{ cm }}%
+        <div class="progress">
+            <div class="progress-bar" style="width: {{ cm }}%; background: yellow;"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        🎯 Accuracy: {{ a }}%
+        <div class="progress">
+            <div class="progress-bar" style="width: {{ a }}%; background: violet;"></div>
+        </div>
+    </div>
+
+    {% endwith %}
+
+    <hr>
+
+    <!-- 📝 ANSWERS -->
+    <h3>📝 Question-wise Results</h3>
+
+    {% for r in results %}
+    <div class="card">
+        <p><b>Round:</b> {{ r.round }}</p>
+        <p><b>Q:</b> {{ r.question }}</p>
+        <p><b>A:</b> {{ r.answer|default:"No answer given" }}</p>
+        <p><b>Score:</b> {{ r.score }}% | Grade: {{ r.grade }}</p>
+        <p><b>Feedback:</b> {{ r.feedback }}</p>
+        <p><b>Emotion:</b> {{ r.emotion }}</p>
+    </div>
+    {% empty %}
+    <p>No interview data available.</p>
+    {% endfor %}
+
+    <hr>
+
+    <!-- 🔘 BUTTONS -->
+    <div class="btn-group">
+        <a href="{% url 'interview:history' %}" class="btn-primary">📜 History</a>
+        <a href="{% url 'interview:download_pdf' %}" class="btn-success">📄 Download PDF</a>
+        <a href="{% url 'accounts:dashboard' %}" class="btn-secondary">⬅ Dashboard</a>
+    </div>
+
+</div>
+
+{% endblock %}

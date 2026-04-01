@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Start Interview{% endblock %}
+
+{% block content %}
+
+<style>
+    body {
+        background:url("{% static 'images/background2.jpg' %}") no-repeat center center fixed;
+        background-size: cover;
+        font-family: 'Segoe UI', sans-serif;
+        color: white;
+    }
+
+    .glow-text {
+        color: white;
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    }
+
+    .interview-container {
+        max-width: 1100px;
+        margin: 10px auto;
+        padding: 35px;
+        border-radius: 20px;
+        backdrop-filter: blur(15px);
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        box-shadow: 0 0 25px rgba(0, 255, 255, 0.3);
+        text-align: center;
+    }
+
+    video {
+        width: 100%;
+        max-height: 320px;
+        object-fit: cover;
+        border-radius: 15px;
+        border: 2px solid rgba(0, 255, 255, 0.4);
+    }
+
+    #transcriptBox {
+        background: rgba(255, 255, 255, 0.08);
+        padding: 15px;
+        border-radius: 10px;
+        min-height: 100px;
+        text-align: left;
+    }
+
+    #recordingStatus {
+        color: #ff4d4d;
+        font-weight: bold;
+        display: none;
+    }
+
+    .btn-group {
+        margin-top: 20px;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .btn-custom {
+        min-width: 150px;
+        padding: 10px;
+        border-radius: 10px;
+        border: none;
+        color: white;
+        cursor: pointer;
+    }
+
+    .btn-dashboard {
+        background: linear-gradient(45deg, #555, #c25f5f);
+    }
+
+    .btn-camera {
+        background: linear-gradient(45deg, #00ff88, #08833b);
+    }
+
+    .btn-start {
+        background: linear-gradient(45deg, #00c6ff, #032d62);
+    }
+
+    .btn-stop {
+        background: linear-gradient(45deg, #ff5252, #510202);
+    }
+
+    #nextRoundBox a {
+        padding: 12px 25px;
+        border-radius: 10px;
+        text-decoration: none;
+        color: white;
+        background: linear-gradient(45deg, #e91e63, #9c27b0);
+        display: inline-block;
+        margin-top: 20px;
+        font-weight: bold;
+    }
+
+    @media(max-width:600px) {
+        .btn-group {
+            flex-direction: column;
+        }
+
+        .btn-custom {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="interview-container">
+
+    <h2 class="glow-text">🎥 AI Interview - {{ round }} Round</h2>
+
+    <h4 id="questionBox" class="glow-text">Click Camera to Start...</h4>
+    <p id="progress" class="glow-text"></p>
+
+    <p id="recordingStatus">🔴 Recording...</p>
+
+    <video id="videoPreview" autoplay playsinline></video>
+
+    <div class="btn-group">
+
+        <a href="{% url 'accounts:dashboard' %}" class="btn-custom btn-dashboard">⬅ Dashboard</a>
+
+        <button onclick="startCamera()" class="btn-custom btn-camera">🎤 Camera</button>
+
+        <button onclick="startRecording()" id="startBtn" class="btn-custom btn-start">▶ Start</button>
+
+        <button onclick="pauseRecording()" id="pauseBtn" class="btn-custom btn-start" style="display:none;">⏸
+            Pause</button>
+
+        <button onclick="resumeRecording()" id="resumeBtn" class="btn-custom btn-camera" style="display:none;">▶
+            Resume</button>
+
+        <button onclick="stopRecording()" id="stopBtn" class="btn-custom btn-stop" style="display:none;">⏹ Stop</button>
+
+    </div>
+
+    <h4 class="glow-text">🗣 Live Transcript</h4>
+    <div id="transcriptBox"></div>
+
+    <div id="nextRoundBox" style="display:none;"></div>
+
+</div>
+
+<script>
+
+    let round = "{{ round }}";
+    let currentQuestionText = "";
+    let transcript = "";
+
+    let recognition = null;
+    let isRecording = false;
+    let isPaused = false;
+
+    /* ================= CAMERA ================= */
+
+    async function startCamera() {
+        try {
+            let stream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+            });
+
+            document.getElementById("videoPreview").srcObject = stream;
+            loadNextQuestion();
+
+        } catch (err) {
+            alert("Camera error: " + err.message);
+        }
+    }
+
+    /* ================= LOAD QUESTION ================= */
+
+    function loadNextQuestion() {
+
+        fetch("{% url 'interview:next_question' %}")
+            .then(res => res.json())
+            .then(data => {
+
+                if (data.finished_round) {
+                    document.getElementById("questionBox").innerText = "✅ Round Completed!";
+                    document.getElementById("progress").innerText = "";
+                    showNextRound();
+                    return;
+                }
+
+                currentQuestionText = data.question;
+
+                document.getElementById("questionBox").innerText = data.question;
+                document.getElementById("progress").innerText =
+                    `Question ${data.current} / ${data.total}`;
+            });
+    }
+
+    /* ================= SPEECH ================= */
+
+    if ('webkitSpeechRecognition' in window) {
+
+        recognition = new webkitSpeechRecognition();
+        recognition.continuous = true;
+
+        recognition.onresult = function (event) {
+
+            let liveText = "";
+
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                liveText += event.results[i][0].transcript;
+            }
+
+            transcript += liveText;
+            document.getElementById("transcriptBox").innerText = transcript;
+        };
+    }
+
+    /* ================= START ================= */
+
+    function startRecording() {
+
+        transcript = "";
+        document.getElementById("transcriptBox").innerText = "";
+
+        document.getElementById("recordingStatus").style.display = "block";
+        document.getElementById("recordingStatus").innerText = "🔴 Recording...";
+
+        isRecording = true;
+        isPaused = false;
+
+        document.getElementById("startBtn").style.display = "none";
+        document.getElementById("pauseBtn").style.display = "inline-block";
+        document.getElementById("stopBtn").style.display = "inline-block";
+
+        if (recognition) recognition.start();
+    }
+
+    /* ================= PAUSE ================= */
+
+    function pauseRecording() {
+
+        if (!isRecording) return;
+
+        isPaused = true;
+
+        if (recognition) recognition.stop();
+
+        document.getElementById("recordingStatus").innerText = "⏸ Paused";
+
+        document.getElementById("pauseBtn").style.display = "none";
+        document.getElementById("resumeBtn").style.display = "inline-block";
+    }
+
+    /* ================= RESUME ================= */
+
+    function resumeRecording() {
+
+        if (!isPaused) return;
+
+        isPaused = false;
+
+        if (recognition) recognition.start();
+
+        document.getElementById("recordingStatus").innerText = "🔴 Recording...";
+
+        document.getElementById("resumeBtn").style.display = "none";
+        document.getElementById("pauseBtn").style.display = "inline-block";
+    }
+
+    /* ================= STOP ================= */
+
+    function stopRecording() {
+
+        isRecording = false;
+        isPaused = false;
+
+        document.getElementById("recordingStatus").style.display = "none";
+
+        if (recognition) recognition.stop();
+
+        document.getElementById("startBtn").style.display = "inline-block";
+        document.getElementById("pauseBtn").style.display = "none";
+        document.getElementById("resumeBtn").style.display = "none";
+        document.getElementById("stopBtn").style.display = "none";
+
+        uploadAnswer();
+    }
+
+    /* ================= SEND ANSWER ================= */
+
+    function uploadAnswer() {
+
+        fetch("{% url 'interview:upload_video' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: new URLSearchParams({
+                transcript: transcript,
+                question: currentQuestionText
+            })
+        })
+            .then(res => res.json())
+            .then(() => {
+                loadNextQuestion();
+            });
+    }
+
+    /* ================= NEXT ROUND ================= */
+
+    function showNextRound() {
+
+        let html = "";
+
+        if (round === "BASIC") {
+            html = `<a href="{% url 'interview:start_interview' %}?round=HR&exp={{ request.session.experience }}">👉 Go to HR Round</a>`;
+        }
+        else if (round === "HR") {
+            html = `<a href="{% url 'interview:start_interview' %}?round=TECH&exp={{ request.session.experience }}">👉 Go to Technical Round</a>`;
+        }
+        else {
+            html = `<a href="{% url 'interview:result' %}">🎯 View Final Result</a>`;
+        }
+
+        let box = document.getElementById("nextRoundBox");
+        box.innerHTML = html;
+        box.style.display = "block";
+    }
+
+</script>
+
+{% endblock %}

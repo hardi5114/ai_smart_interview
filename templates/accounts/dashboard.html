@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+    /* 🌌 BACKGROUND */
+    body {
+        background: url("/static/images/background2.jpg") no-repeat center/cover;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    /* ✅ FORCE WHITE TEXT */
+    .dashboard,
+    .dashboard * {
+        color: #ffffff !important;
+    }
+
+    /* 🌫️ GLASS CARD */
+    .card {
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(15px);
+        border-radius: 15px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border: 1px solid rgba(0, 255, 255, 0.25);
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        transition: 0.3s;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+    }
+
+    /* 🚀 BUTTONS */
+    .buttons {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+    }
+
+    .btn {
+        padding: 10px;
+        border-radius: 10px;
+        text-align: center;
+        font-weight: 500;
+        text-decoration: none;
+    }
+
+    .btn.upload {
+        background: linear-gradient(45deg, #00c6ff, #10386a);
+    }
+
+    .btn.start {
+        background: linear-gradient(45deg, #00ff88, #1f6b3f);
+    }
+
+    .btn.resume {
+        background: linear-gradient(45deg, #ff9800, #a5320e);
+    }
+
+    .btn.result {
+        background: linear-gradient(45deg, #e91e63, #9c27b0);
+    }
+
+    .btn.history {
+        background: linear-gradient(45deg, #00bcd4, #455a64);
+    }
+
+    .btn:hover {
+        transform: scale(1.05);
+    }
+
+    /* 👤 PROFILE ROW */
+    .top-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+    }
+
+    .status-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        display: inline-block;
+        font-weight: bold;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .status-completed {
+        background: #00ff88;
+        color: black;
+    }
+
+    .status-pending {
+        background: #ffc107;
+        color: black;
+    }
+
+    /* 📄 RESUME AUTO HEIGHT (MAIN FIX) */
+    .resume-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .resume-row div {
+        flex: 1 1 220px;
+        min-width: 220px;
+        padding: 12px;
+        border-radius: 10px;
+
+        background: rgba(255, 255, 255, 0.05);
+
+        line-height: 1.6;
+        word-break: break-word;
+        white-space: normal;
+
+        height: auto;
+    }
+
+    /* 📊 CHART ROW */
+    .chart-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+
+    /* 📱 MOBILE */
+    @media (max-width: 768px) {
+
+        .top-row,
+        .chart-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="dashboard">
+
+    <!-- 🚀 WELCOME -->
+    <div class="card">
+        <h2>🚀 Welcome, {{ request.user.username }}</h2>
+    </div>
+
+    <!-- 🎯 BUTTONS -->
+    <div class="card">
+        <div class="buttons">
+
+            <a href="{% url 'accounts:upload_resume' %}" class="btn upload">📄 Upload</a>
+            <a href="{% url 'accounts:start_interview' %}" class="btn start">🎥 Start Interview</a>
+
+            {% if resume %}
+            <a href="{{ resume.file.url }}" class="btn resume">👀 View Resume</a>
+            {% else %}
+            <a class="btn resume" style="opacity:0.5; pointer-events:none;">👀 View Resume</a>
+            {% endif %}
+
+            <a href="{% url 'interview:result' %}" class="btn result">📊 Result</a>
+            <a href="{% url 'interview:history' %}" class="btn history">📜 History</a>
+
+        </div>
+    </div>
+
+    <!-- 👤 PROFILE + RANK + ROADMAP -->
+    <div class="card top-row">
+
+        <div>
+            <h4>👤 Profile</h4>
+            <p>{{ request.user.username }}</p>
+            <p>{{ request.user.email }}</p>
+
+            <br>
+
+            <h4>📌 Interview Status</h4>
+
+            {% if interview_status == "Completed" %}
+            <p style="color:#00ff88; font-weight:bold;">
+                ✅ Completed
+            </p>
+            {% else %}
+            <p style="color:#ffc107; font-weight:bold;">
+                ⏳ Pending
+            </p>
+            {% endif %}
+
+        </div>
+
+        <div>
+            <h4>🏆 Rank</h4>
+            <p style="font-size:22px; color:gold;">
+                {{ badge|default:"- -" }}
+            </p>
+        </div>
+
+        <div>
+            <h4>🧠 Roadmap</h4>
+            {% if roadmap %}
+            <ul>
+                {% for item in roadmap %}
+                <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>You're doing great 🚀</p>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- 📄 RESUME DATA -->
+    {% if resume_data %}
+    <div class="card">
+        <h4>📄 Extracted Resume Data</h4>
+
+        <div class="resume-row">
+
+            <div>
+                <b>Name:</b><br>
+                {{ resume_data.full_name|default:"Not detected" }}
+            </div>
+
+            <div>
+                <b>Email:</b><br>
+                {{ resume_data.email|default:"Not detected" }}
+            </div>
+
+            <div>
+                <b>Skills:</b><br>
+                {{ resume_data.skills|default:"Not detected" }}
+            </div>
+
+            <div>
+                <b>Education:</b><br>
+                {{ resume_data.education|default:"Not detected" }}
+            </div>
+
+            <div>
+                <b>Experience:</b><br>
+                {{ resume_data.experience|default:"Not detected" }}
+            </div>
+
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 📊 CHARTS -->
+    <div class="chart-row">
+
+        <div class="card">
+            <h4>📊 Progress</h4>
+            <canvas id="progressChart"></canvas>
+        </div>
+
+        <div class="card">
+            <h4>🎥 Confidence</h4>
+            <canvas id="confidenceChart"></canvas>
+        </div>
+
+        <div class="card">
+            <h4>🎙 Speech Clarity</h4>
+            <canvas id="clarityChart"></canvas>
+        </div>
+
+    </div>
+
+    <!-- 🧠 AI FEEDBACK -->
+    <div class="card">
+        <h4>🧠 AI Feedback</h4>
+        <p style="white-space:pre-line;">
+            {{ ai_feedback|default:"Run interview to get AI feedback 🚀" }}
+        </p>
+    </div>
+
+</div>
+
+<!-- 📊 CHART JS -->
+<script>
+    const labels = JSON.parse('{{ labels|escapejs }}');
+    const scores = JSON.parse('{{ scores|escapejs }}');
+    const confidence = JSON.parse('{{ confidence_data|escapejs }}');
+    const clarity = JSON.parse('{{ clarity_data|escapejs }}');
+
+    new Chart(document.getElementById('progressChart'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                data: scores,
+                borderColor: "#00eaff",
+                fill: true
+            }]
+        }
+    });
+
+    new Chart(document.getElementById('confidenceChart'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                data: confidence,
+                backgroundColor: "#ff4081"
+            }]
+        }
+    });
+
+    new Chart(document.getElementById('clarityChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ["Clear", "Moderate", "Unclear"],
+            datasets: [{
+                data: clarity,
+                backgroundColor: ["#00ff88", "#ffc107", "#ff5252"]
+            }]
+        }
+    });
+</script>
+
+{% endblock %}

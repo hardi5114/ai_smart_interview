@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Interview History{% endblock %}
+
+{% block content %}
+
+<style>
+    body {
+        background: url("{% static 'images/background2.jpg' %}") no-repeat center/cover;
+        font-family: 'Segoe UI', sans-serif;
+        color: white;
+    }
+
+    /* 🌟 Glow Text */
+    h2 {
+        color: white;
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    }
+
+    .container-box {
+        max-width: 950px;
+        margin: 50px auto;
+        padding: 30px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        box-shadow: 0 0 25px rgba(0, 255, 255, 0.2);
+    }
+
+    /* TABLE */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    th,
+    td {
+        padding: 12px;
+        text-align: center;
+        color: white;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    th {
+        background: rgb(11 13 13 / 48%);
+        text-shadow: 0 0 8px rgba(0, 255, 255, 0.8);
+    }
+
+    /* ROW HOVER */
+    tr:hover {
+        background: rgba(0, 255, 255, 0.1);
+        transition: 0.3s;
+    }
+
+    /* BUTTON */
+    .btn-back {
+        padding: 10px 20px;
+        border-radius: 10px;
+        text-decoration: none;
+        color: white;
+        background: linear-gradient(45deg, #010202, #114d99);
+        transition: 0.3s;
+    }
+
+    .btn-back:hover {
+        transform: scale(1.1);
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.7);
+    }
+
+    /* 📱 MOBILE RESPONSIVE DESIGN */
+    @media screen and (max-width: 768px) {
+
+        body {
+            padding: 10px;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .container-box {
+            margin: 20px 10px;
+            padding: 15px;
+            border-radius: 15px;
+        }
+
+        h2 {
+            font-size: 20px;
+            text-align: center;
+        }
+
+        /* TABLE SCROLL FIX */
+        table {
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+            font-size: 13px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            font-size: 12px;
+        }
+
+        /* make columns compact */
+        th {
+            font-size: 13px;
+        }
+
+        /* button mobile friendly */
+        .btn-back {
+            display: inline-block;
+            width: 100%;
+            text-align: center;
+            padding: 12px;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+    }
+</style>
+
+<div class="container-box">
+
+    <h2 class="text-center">📜 Interview History</h2>
+
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Question</th>
+            <th>Score</th>
+        </tr>
+
+        {% for item in results %}
+        <tr>
+            <td>{{ item.created_at }}</td>
+            <td>{{ item.question }}</td>
+            <td>{{ item.score }}%</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="3">No history available 🚀</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <div class="text-center mt-4">
+        <a href="{% url 'accounts:dashboard' %}" class="btn-back">
+            ⬅ Back to Dashboard
+        </a>
+    </div>
+
+</div>
+
+{% endblock %}
